@@ -1,6 +1,11 @@
 # ecoforest-proxy
 proxy server for Ecoforest stoves
 
+## run
+```
+python ecoforest-proxy.py
+```
+
 ## Docker compose
 ```
 ecoforest-proxy:  
