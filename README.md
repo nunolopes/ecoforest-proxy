@@ -3,7 +3,7 @@ proxy server for Ecoforest stoves
 
 ## run
 ```
-python ecoforest-proxy.py
+ECOFOREST_HOST=http://10.0.0.0 ECOFOREST_PASSWORD=pwd ECOFOREST_USERNAME=user python ecoforest-proxy.py
 ```
 
 ## Docker compose
@@ -12,6 +12,10 @@ ecoforest-proxy:
     build: ./ecoforest_proxy/
     container_name: ecoforest
     restart: always
+    environment:
+      ECOFOREST_HOST: http://10.0.0.0
+      ECOFOREST_PASSWORD: pwd 
+      ECOFOREST_USERNAME: user
     ports:
       - 8998:8998
 ```
