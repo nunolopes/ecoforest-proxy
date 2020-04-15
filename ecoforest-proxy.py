@@ -86,22 +86,26 @@ class EcoforestServer(BaseHTTPRequestHandler):
         stats = self.ecoforest_call('idOperacion=1002')
         reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
         power_now = reply['consigna_potencia']
-        print(power_now)
-        print(power)
         power_now = int(power_now)
-        print(type(power_now))
+        logging.info('Power %s issued, stove power is at %s' % (power, power_now))
 
         if DEBUG: logging.debug('POWER: %s' % (power_now))
-        if power == "up" and power_now < "9":
-            print("here at power up")
-            power_final = power_now + 1
-            print(power_final)
-        else:
-            if DEBUG: logging.debug('POWER at MAX: %s' % (power_now))
-        if power == "down" and power_now <= 9 and power_now > 1:
-            power_final = power_now - 1
-        else:
-            if DEBUG: logging.debug('POWER at MIN: %s' % (power_now))
+        if  power == "up":
+            if power_now < 9:
+                power_final = power_now + 1
+                logging.info('Stove will change to %s' % power_final)
+            else:
+                if DEBUG: logging.debug('POWER at MAX: %s' % (power_now))
+                power_final = power_now
+                logging.info('Stove at MAX: %s' % power_final)
+        if power == "down":
+            if (power_now <= 9 and power_now > 1):
+                power_final = power_now - 1
+                logging.info('Stove will change to %s' % power_final)
+            else:
+                if DEBUG: logging.debug('POWER at MIN: %s' % (power_now))
+                power_final = power_now
+                logging.info('Stove at MIN: %s' % power_final)
         # idOperacion=1004&potencia=
         data = self.ecoforest_call('idOperacion=1004&potencia=' + str(power_final))
         print(data)
@@ -119,6 +123,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '3'  : 'starting', 
             '4'  : 'starting', 
             '5'  : 'starting', 
+            '6'  : 'starting', 
             '10' : 'starting', 
             '7'  : 'on', 
             '8'  : 'shutting down', 
