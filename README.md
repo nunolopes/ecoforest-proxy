@@ -1,5 +1,5 @@
 # ecoforest-proxy
-proxy server for Ecoforest stoves
+proxy server for Ecoforest and Netflame stoves
 
 ## run
 ```

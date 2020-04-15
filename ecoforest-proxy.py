@@ -17,6 +17,7 @@ host = os.environ['ECOFOREST_HOST']
 
 print()
 
+
 ECOFOREST_URL = host + '/recepcion_datos_4.cgi'
 
 if DEBUG:
@@ -83,6 +84,36 @@ class EcoforestServer(BaseHTTPRequestHandler):
         self.send(self.ecoforest_stats())
 
 
+    def set_power(self, power):
+        stats = self.ecoforest_call('idOperacion=1002')
+        reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
+        power_now = reply['consigna_potencia']
+        power_now = int(power_now)
+        logging.info('Power %s issued, stove power is at %s' % (power, power_now))
+
+        if DEBUG: logging.debug('POWER: %s' % (power_now))
+        if  power == "up":
+            if power_now < 9:
+                power_final = power_now + 1
+                logging.info('Stove will change to %s' % power_final)
+            else:
+                if DEBUG: logging.debug('POWER at MAX: %s' % (power_now))
+                power_final = power_now
+                logging.info('Stove at MAX: %s' % power_final)
+        if power == "down":
+            if (power_now <= 9 and power_now > 1):
+                power_final = power_now - 1
+                logging.info('Stove will change to %s' % power_final)
+            else:
+                if DEBUG: logging.debug('POWER at MIN: %s' % (power_now))
+                power_final = power_now
+                logging.info('Stove at MIN: %s' % power_final)
+        # idOperacion=1004&potencia=
+        data = self.ecoforest_call('idOperacion=1004&potencia=' + str(power_final))
+        print(data)
+        self.send(self.ecoforest_stats())
+
+
     def ecoforest_stats(self):
         stats = self.ecoforest_call('idOperacion=1002')
         reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
@@ -94,6 +125,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '3'  : 'starting',
             '4'  : 'starting',
             '5'  : 'starting',
+            '6'  : 'starting', 
             '10' : 'starting',
             '7'  : 'on',
             '8'  : 'shutting down',
@@ -166,6 +198,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '/ecoforest/status': self.get_status,
             '/ecoforest/set_status': self.set_status,
             '/ecoforest/set_temp': self.set_temp,
+            '/ecoforest/set_power': self.set_power,
         }
 
         # API calls
