@@ -15,6 +15,7 @@ username = 'ecoforest_user'
 passwd = 'ecoforest_password'
 host = 'http://<ecoforest_ip>'
 
+
 ECOFOREST_URL = host + '/recepcion_datos_4.cgi'
 
 if DEBUG:
@@ -78,6 +79,32 @@ class EcoforestServer(BaseHTTPRequestHandler):
             temp = "30"
         # idOperacion=1019&temperatura
         data = self.ecoforest_call('idOperacion=1019&temperatura=' + temp)
+        self.send(self.ecoforest_stats())
+
+
+    def set_power(self, power):
+        stats = self.ecoforest_call('idOperacion=1002')
+        reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
+        power_now = reply['consigna_potencia']
+        print(power_now)
+        print(power)
+        power_now = int(power_now)
+        print(type(power_now))
+
+        if DEBUG: logging.debug('POWER: %s' % (power_now))
+        if power == "up" and power_now < "9":
+            print("here at power up")
+            power_final = power_now + 1
+            print(power_final)
+        else:
+            if DEBUG: logging.debug('POWER at MAX: %s' % (power_now))
+        if power == "down" and power_now <= 9 and power_now > 1:
+            power_final = power_now - 1
+        else:
+            if DEBUG: logging.debug('POWER at MIN: %s' % (power_now))
+        # idOperacion=1004&potencia=
+        data = self.ecoforest_call('idOperacion=1004&potencia=' + str(power_final))
+        print(data)
         self.send(self.ecoforest_stats())
 
 
@@ -164,6 +191,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '/ecoforest/status': self.get_status,
             '/ecoforest/set_status': self.set_status,
             '/ecoforest/set_temp': self.set_temp,
+            '/ecoforest/set_power': self.set_power,
         }
 
         # API calls
