@@ -2,7 +2,7 @@
 Ecoforest proxy to transform replies to JSON
 """
 
-import sys, logging, datetime, urllib, urllib2, json, requests, urlparse
+import sys, logging, datetime, urllib, urllib2, json, requests, urlparse, os
 from os import curdir, sep
 from BaseHTTPServer import BaseHTTPRequestHandler
 from requests.auth import HTTPBasicAuth
@@ -11,9 +11,11 @@ from requests.auth import HTTPBasicAuth
 DEBUG = False
 DEFAULT_PORT = 8998
 
-username = 'ecoforest_user'
-passwd = 'ecoforest_password'
-host = 'http://<ecoforest_ip>'
+username = os.environ['ECOFOREST_USERNAME']
+passwd = os.environ['ECOFOREST_PASSWORD']
+host = os.environ['ECOFOREST_HOST']
+
+print()
 
 
 ECOFOREST_URL = host + '/recepcion_datos_4.cgi'
@@ -119,24 +121,24 @@ class EcoforestServer(BaseHTTPRequestHandler):
         states = {
             '0'  : 'off',
             '1'  : 'off',
-            '2'  : 'starting', 
-            '3'  : 'starting', 
-            '4'  : 'starting', 
-            '5'  : 'starting', 
+            '2'  : 'starting',
+            '3'  : 'starting',
+            '4'  : 'starting',
+            '5'  : 'starting',
             '6'  : 'starting', 
-            '10' : 'starting', 
-            '7'  : 'on', 
-            '8'  : 'shutting down', 
-            '-2' : 'shutting down', 
-            '9'  : 'shutting down', 
-            '11' : 'shutting down', 
+            '10' : 'starting',
+            '7'  : 'on',
+            '8'  : 'shutting down',
+            '-2' : 'shutting down',
+            '9'  : 'shutting down',
+            '11' : 'shutting down',
             '-3' : 'alarm',
             '-4' : 'alarm',
             '20' : 'stand by',
         }
 
         state = reply['estado']
-        if state in states: 
+        if state in states:
             reply['state'] = states[state]
         else:
             reply['state'] = 'unknown'
@@ -149,7 +151,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
     def ecoforest_call(self, body):
         if DEBUG: logging.debug('Request:\n%s' % (body))
         headers = { 'Content-Type': 'application/json' }
-        try: 
+        try:
             request = requests.post(ECOFOREST_URL, data=body, headers=headers, auth=HTTPBasicAuth(username, passwd), timeout=2.5)
             if DEBUG: logging.debug('Request:\n%s' %(request.url))
             if DEBUG: logging.debug('Result:\n%s' %(request.text))
@@ -189,7 +191,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
         args = dict()
         if parsed_path.query:
             args = dict(qc.split("=") for qc in parsed_path.query.split("&"))
-        
+
         dispatch = {
             '/healthcheck': self.healthcheck,
             '/ecoforest/fullstats': self.stats,
@@ -215,7 +217,8 @@ if __name__ == '__main__':
     try:
         from BaseHTTPServer import HTTPServer
         server = HTTPServer(('', DEFAULT_PORT), EcoforestServer)
-        logging.info('Ecoforest proxy server started, use {Ctrl+C} to shut-down ...')
+        logging.info('Ecoforest proxy server started, with config host (%s) and username (%s)', host, username)
+        logging.info('use {Ctrl+C} to shut-down ...')
         server.serve_forever()
     except Exception, e:
         logging.error(e)
