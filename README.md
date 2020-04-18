@@ -22,9 +22,12 @@ ecoforest-proxy:
 
 ## Home Assistant config (configuration.yaml)
 
-## https://github.com/jcwillox/lovelace-paper-buttons-row for the UI Lovelace
-## custom buttons (example in pictures at the end)
 ```
+You need to install this custom button card at:
+https://github.com/jcwillox/lovelace-paper-buttons-row
+(example in pictures at the end)
+
+
 sensor:
   - platform: rest
     name: ecoforest
@@ -157,6 +160,13 @@ rest_command:
                     border-radius: 10px
                     font-size: 16px
                     background-color: var(--table-row-alternative-background-color)
+          - type: entities
+            state_color: on
+            entities:
+              - entity: sensor.ecoforest_room_temp
+                secondary_info: last-changed
+                name: Room Temperature
+
 ```
-<img src="example.jpg" />
-<img src="example_shutdown.jpg" />
+<img src="example.jpg" width="400"/>
+<img src="example_shutdown.jpg" width="400" />
