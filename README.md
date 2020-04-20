@@ -20,9 +20,14 @@ ecoforest-proxy:
       - 8998:8998
 ```
 
-## Home Assistant config
+## Home Assistant config (configuration.yaml)
 
 ```
+You need to install this custom button card at:
+https://github.com/jcwillox/lovelace-paper-buttons-row
+(example in pictures at the end)
+
+
 sensor:
   - platform: rest
     name: ecoforest
@@ -60,4 +65,108 @@ sensor:
         friendly_name: "Room Temperature"
         unit_of_measurement: "°C"
         value_template: "{{ state_attr('sensor.ecoforest', 'temperatura') }}"
+
+switch:        
+  - platform: template
+    switches:
+      ecoforest_switch:
+        friendly_name: "Ecoforest On/Off"
+        value_template: "{{ (is_state('sensor.ecoforest_status', 'on')) or (is_state('sensor.ecoforest_status', 'starting')) }}"
+        turn_on:
+          service: rest_command.ecoforest_onoff
+          data:
+            status: "on"
+        turn_off:
+          service: rest_command.ecoforest_onoff
+          data:
+            status: "off"
+
+rest_command:
+  ecoforest_powerdown:
+    url: http://your_ip_address:8998/ecoforest/set_power?power=down
+    method: GET
+  ecoforest_powerup:
+    url: http://your_ip_address:8998/ecoforest/set_power?power=up
+    method: GET
+  ecoforest_onoff:
+    url: http://your_ip_address:8998/ecoforest/set_status?status={{ status }}
+    method: GET
 ```
+
+## Home Assistant UI Lovelace (ui-lovelace.yaml)
+```
+      - type: vertical-stack
+        title: Heating
+        show_header_toggle: false
+        cards:
+          - type: entities
+            state_color: on
+            entities:
+              - entity: sensor.ecoforest_status 
+                secondary_info: last-changed
+                icon: 'mdi:power'
+          - type: gauge
+            entity: sensor.ecoforest_potencia
+            name: 'power'
+            min: 0
+            max: 9
+            severity:
+              green: 0
+              yellow: 4
+              red: 7
+          - type: "custom:paper-buttons-row"
+            buttons:
+              - icon: "mdi:chevron-up"
+                #name: "up"
+                tap_action:
+                  action: call-service
+                  service: rest_command.ecoforest_powerup
+                style: # These are the default styles that can be overridden by state styles.
+                  button:
+                    border-radius: 10px
+                    font-size: 16px
+                    background-color: var(--table-row-alternative-background-color)
+              - icon: "mdi:power"
+                name: false
+                entity: switch.ecoforest_switch
+                style:
+                  button:
+                    background-color: var(--table-row-alternative-background-color)
+                    border-radius: 10px
+                    font-size: 1.2rem
+                    padding: 8px
+                  icon:
+                    width: 40px # make the icon bigger.
+                    height: auto
+                state_styles:
+                  "on":
+                    button:
+                      background-color: var(--table-row-alternative-background-color)
+                    icon:
+                      #color: var(--paper-item-icon-active-color)
+                      color: green
+                  "off": # define a state then provide a style object.
+                    button:
+                      background-color: var(--table-row-alternative-background-color)
+                    icon:
+                      color: red
+              - icon: "mdi:chevron-down"
+                #name: "down"
+                tap_action:
+                  action: call-service
+                  service: rest_command.ecoforest_powerdown
+                style: # These are the default styles that can be overridden by state styles.
+                  button:
+                    border-radius: 10px
+                    font-size: 16px
+                    background-color: var(--table-row-alternative-background-color)
+          - type: entities
+            state_color: on
+            entities:
+              - entity: sensor.ecoforest_room_temp
+                secondary_info: last-changed
+                name: Room Temperature
+
+```
+<img src="example.jpg" width="400"/>
+<img src="example_shutdown.jpg" width="400" />
