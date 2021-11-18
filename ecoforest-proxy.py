@@ -138,7 +138,6 @@ class EcoforestServer(BaseHTTPRequestHandler):
         stats = self.ecoforest_call('idOperacion=1002')
         reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
 
-        print(reply)
 
         states = {
             '0'  : 'off',
