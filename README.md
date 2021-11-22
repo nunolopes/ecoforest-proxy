@@ -14,7 +14,7 @@ ecoforest-proxy:
     restart: always
     environment:
       ECOFOREST_HOST: http://10.0.0.0
-      ECOFOREST_PASSWORD: pwd 
+      ECOFOREST_PASSWORD: pwd
       ECOFOREST_USERNAME: user
     ports:
       - 8998:8998
@@ -66,6 +66,74 @@ sensor:
         unit_of_measurement: "°C"
         value_template: "{{ state_attr('sensor.ecoforest', 'temperatura') }}"
 
+    - platform: rest
+      name: ecoforestother
+      resource: 'http://192.168.0.254:8998/ecoforest/otherstats'
+      method: 'GET'
+      scan_interval: 9
+      force_update: true
+      json_attributes:
+        - Th
+        - Da
+        - Tp
+        - Nh
+        - Ne
+        - Pn
+        - Pf
+        - Es
+        - Ex
+        - Ni
+        - Co
+        - Tn
+
+    - platform: template
+      sensors:
+        ecoforest_gastemp:
+          friendly_name: "Gas Temperature"
+          unit_of_measurement: "°C"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Th') }}"
+        ecoforest_depression:
+          friendly_name: "Depression"
+          unit_of_measurement: "Pa"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Da') }}"
+        ecoforest_cpu:
+          friendly_name: "CPU Temperature"
+          unit_of_measurement: "°C"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Tp') }}"
+        ecoforest_hours:
+          friendly_name: "Working Hours"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Nh') }}"
+        ecoforest_ignitions:
+          friendly_name: "Ignitions"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Ne') }}"
+        ecoforest_livepulse:
+          friendly_name: "Live Pulse"
+          unit_of_measurement: "s"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Pn') }}"
+        ecoforest_pulseoffset:
+          friendly_name: "Pulse Offset"
+          unit_of_measurement: "s"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Pf') }}"
+        ecoforest_wstate:
+          friendly_name: "Working State"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Es') }}"
+        ecoforest_extractor:
+          friendly_name: "Extractor"
+          unit_of_measurement: "%"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Ex') }}"
+        ecoforest_level:
+          friendly_name: "Working Level"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Ni') }}"
+        ecoforest_convector:
+          friendly_name: "Convector Air Flow"
+          unit_of_measurement: "%"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Co') }}"
+        ecoforest_ntc:
+          friendly_name: "NTC Probe Temperature"
+          unit_of_measurement: "°C"
+          value_template: "{{ state_attr('sensor.ecoforestother', 'Tn') }}"
+
+
 switch:        
   - platform: template
     switches:
@@ -102,9 +170,17 @@ rest_command:
           - type: entities
             state_color: on
             entities:
-              - entity: sensor.ecoforest_status 
+              - entity: sensor.ecoforest_status
                 secondary_info: last-changed
                 icon: 'mdi:power'
+              - entity: sensor.ecoforest_gastemp
+                secondary_info: last-changed
+              - entity: sensor.ecoforest_livepulse
+                secondary_info: last-changed
+              - entity: sensor.ecoforest_extractor
+                secondary_info: last-changed
+              - entity: sensor.ecoforest_ntc
+                secondary_info: last-changed
           - type: gauge
             entity: sensor.ecoforest_potencia
             name: 'power'

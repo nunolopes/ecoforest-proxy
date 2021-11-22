@@ -37,7 +37,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(response))
         except:
-            self.send_error(500, 'Something went wrong here on the server side.')
+            self.send_error(500, 'EcoforestServer: Something went wrong here on the server side.')
 
 
     def healthcheck(self):
@@ -50,7 +50,15 @@ class EcoforestServer(BaseHTTPRequestHandler):
         if stats:
             self.send(stats)
         else:
-            self.send_error(500, 'Something went wrong here on the server side.')
+            self.send_error(500, 'Stats: Something went wrong here on the server side.')
+
+    def otherstats(self):
+        if DEBUG: logging.debug('GET otherstats')
+        stats = self.ecoforest_fullstats()
+        if stats:
+            self.send(stats)
+        else:
+            self.send_error(500, 'OtherStats: Something went wrong here on the server side.')
 
 
     def set_status(self, status):
@@ -113,10 +121,23 @@ class EcoforestServer(BaseHTTPRequestHandler):
         print(data)
         self.send(self.ecoforest_stats())
 
+    def ecoforest_fullstats(self):
+        stats = self.ecoforest_call('idOperacion=1020')
+        reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
+        # Remove all white spaces from bad response from ecoforest ...
+        reply = { x.translate({32:None}) : y
+                 for x, y in reply.items()}
+        # Extract the juice (problems with 255 limit chars in HA)
+        dfilter = lambda x, y: dict([ (i,x[i]) for i in x if i in set(y) ])
+        wanted_values= ('Th','Da','Tp','Nh','Ne','Pn','Pf','Es','Ex','Ni','Co','Tn')
+        reply1 = dfilter(reply, wanted_values)
+
+	return reply1
 
     def ecoforest_stats(self):
         stats = self.ecoforest_call('idOperacion=1002')
         reply = dict(e.split('=') for e in stats.text.split('\n')[:-1]) # discard last line ?
+
 
         states = {
             '0'  : 'off',
@@ -125,7 +146,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '3'  : 'starting',
             '4'  : 'starting',
             '5'  : 'starting',
-            '6'  : 'starting', 
+            '6'  : 'starting',
             '10' : 'starting',
             '7'  : 'on',
             '8'  : 'shutting down',
@@ -179,7 +200,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             try:
                 dispatch[parsed_path.path](post_body, **args)
             except:
-                self.send_error(500, 'Something went wrong here on the server side.')
+                self.send_error(500, 'do_POST: Something went wrong here on the server side.')
         else:
             self.send_error(404,'File Not Found: %s' % parsed_path.path)
 
@@ -199,6 +220,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             '/ecoforest/set_status': self.set_status,
             '/ecoforest/set_temp': self.set_temp,
             '/ecoforest/set_power': self.set_power,
+            '/ecoforest/otherstats': self.otherstats,
         }
 
         # API calls
@@ -206,7 +228,7 @@ class EcoforestServer(BaseHTTPRequestHandler):
             try:
                 dispatch[parsed_path.path](**args)
             except:
-                self.send_error(500, 'Something went wrong here on the server side.')
+                self.send_error(500, 'do_GET: Something went wrong here on the server side.')
         else:
             self.send_error(404,'File Not Found: %s' % parsed_path.path)
 
